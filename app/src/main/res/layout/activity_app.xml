@@ -6,6 +6,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.AppActivity">
 
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
     <ru.netology.nmedia.ui.StatsView
         android:id="@+id/stats"
         android:layout_width="300dp"
@@ -15,5 +21,7 @@
         app:fontSize="50dp"
         app:colors="@array/colors"
         />
+
+
 </FrameLayout>
 

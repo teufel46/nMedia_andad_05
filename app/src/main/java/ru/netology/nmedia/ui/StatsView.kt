@@ -1,5 +1,6 @@
 package ru.netology.nmedia.ui
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -7,10 +8,10 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.LinearInterpolator
 import androidx.core.content.withStyledAttributes
 import ru.netology.nmedia.R
 import ru.netology.nmedia.util.AndroidUtils
-import java.lang.Float.sum
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -27,6 +28,9 @@ class StatsView @JvmOverloads constructor(
     private var lineWidth = AndroidUtils.dp(context, 5F).toFloat()
     private var fontSize = AndroidUtils.dp(context, 40F).toFloat()
     private var colors = emptyList<Int>()
+
+    private var progress = 0F
+    private var valueAnimator: ValueAnimator? = null
 
     init {
         context.withStyledAttributes(attrs, R.styleable.StatsView) {
@@ -53,7 +57,7 @@ class StatsView @JvmOverloads constructor(
     var data: List<Float> = emptyList()
         set(value) {
             field = value
-            invalidate()
+            update()
         }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -72,16 +76,21 @@ class StatsView @JvmOverloads constructor(
 
         var startFrom = -90F
 
-
         for ((index, datum) in data.withIndex()) {
             val angle = 360F * datum / data.sum()
             paint.color = colors.getOrNull(index) ?: randomColor()
-            canvas.drawArc(oval, startFrom, angle, false, paint)
+            val centerArc = startFrom + 0.5F * angle
+            val startArc = centerArc - angle * progress / 2 + 360F * progress
+            val lengthArc =  angle * progress
+            canvas.drawArc(oval,  startArc, lengthArc, false, paint)
+            println("""
+                ====
+                index = $index startFrom=$startFrom
+                progress = $progress 
+                centerArc = $centerArc startArc=$startArc lengthArc=$lengthArc
+            """.trimIndent())
             startFrom += angle
         }
-
-        paint.color = colors.getOrNull(0) ?: randomColor()
-        canvas.drawArc(oval, -90F, 1F, false, paint)
 
         canvas.drawText(
             "%.2f%%".format(100F),
@@ -92,4 +101,23 @@ class StatsView @JvmOverloads constructor(
     }
 
     private fun randomColor() = Random.nextInt(0xFF000000.toInt(), 0xFFFFFFFF.toInt())
+
+    private fun update(){
+        valueAnimator?.let {
+            it.removeAllListeners()
+            it.cancel()
+        }
+        progress = 0F
+
+        valueAnimator = ValueAnimator.ofFloat(0F, 1F).apply {
+            addUpdateListener { anim ->
+                progress = anim.animatedValue as Float
+                invalidate()
+            }
+            duration = 5000
+            interpolator = LinearInterpolator()
+        }.also {
+            it.start()
+        }
+    }
 }
